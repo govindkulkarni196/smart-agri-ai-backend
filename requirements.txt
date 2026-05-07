@@ -6,3 +6,4 @@ requests
 groq
 gunicorn
 streamlit
+python-dotenv
