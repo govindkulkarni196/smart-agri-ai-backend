@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 
 # WEATHER SERVICE
-from weather_service import get_weather
+from weather_utils import get_weather
 
 # RECOMMENDATION ENGINE
 from recommendation_engine import generate_recommendation
