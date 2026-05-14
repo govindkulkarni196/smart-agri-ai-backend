@@ -1,9 +1,7 @@
 import requests
 
-# Flask API URL
 url = "http://127.0.0.1:5000/predict"
 
-# Sample input data
 sample_data = {
 
     "Crop": "Rice",
@@ -23,8 +21,6 @@ sample_data = {
     "lon": 77.5946
 }
 
-# Send POST request
 response = requests.post(url, json=sample_data)
 
-# Print API response
 print(response.json())

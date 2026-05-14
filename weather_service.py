@@ -1,9 +1,10 @@
 import requests
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-API_KEY = "3062b7e28b46b4b1b706240dd9d496e3"
+os.getenv("OPENWEATHER_API_KEY")
 
 
 def get_weather(lat, lon):

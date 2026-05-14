@@ -18,24 +18,26 @@ client = Groq(
 # GENERATE AI RECOMMENDATION
 # ==========================================
 
-def generate_recommendation(crop, risk, weather_data):
+def generate_recommendation(crop, risk, risk_type, weather_data):
 
     temperature = weather_data["temperature"]
 
     humidity = weather_data["humidity"]
 
-    rainfall = weather_data["rainfall"]
+    rainfall = weather_data["current_rainfall"]
 
     # ======================================
     # AI PROMPT
     # ======================================
 
     prompt = f"""
-You are an agricultural advisory assistant helping farmers improve crop yield.
+You are an agricultural advisory assistant helping farmers.
 
 Crop: {crop}
 
-Predicted yield risk: {risk}
+Risk Type: {risk_type}
+
+Risk Level: {risk}
 
 Current weather conditions:
 - Temperature: {temperature} °C
@@ -49,16 +51,13 @@ Important Rules:
 - Advice should sound natural and human
 - Avoid scientific or technical terms
 - Avoid scientific jargon
-- Avoid exact measurements unless necessary
-- Focus on improving crop yield
-- Maximum 5 short points
-- Do not exaggerate
-- Give practical yield-improvement suggestions
+- Keep advice realistic
+- Maximum 2 short lines
+- Give practical suggestions
+- Advice should match the risk type
 - Advice should be useful for real farmers
-- Use suitable emojis to make it more engaging
-- Recommend actions based on the risk level (e.g., if risk is high, recommend more protective measures)
-- Advice should sound like a real agricultural advisory system
-- Keep advice  realistic and actionable
+- Use suitable emojis
+- Keep response farmer-friendly
 """
 
     # ======================================
@@ -78,7 +77,7 @@ Important Rules:
 
         temperature=0.3,
 
-        max_tokens=90
+        max_tokens=80
     )
 
     # ======================================

@@ -2,11 +2,15 @@ from flask import Flask, request, jsonify
 import pickle
 import pandas as pd
 
-# IMPORT WEATHER SERVICE
+# WEATHER SERVICE
 from weather_service import get_weather
 
-# IMPORT AI RECOMMENDATION ENGINE
+# RECOMMENDATION ENGINE
 from recommendation_engine import generate_recommendation
+
+# RULE ENGINES
+from pest_rules import calculate_pest_risk
+from disease_rules import calculate_disease_risk
 
 # ==========================================
 # LOAD SAVED FILES
@@ -34,7 +38,7 @@ app = Flask(__name__)
 @app.route('/')
 def home():
 
-    return "Smart Agricultural Yield Risk Prediction API Running"
+    return "Smart Agriculture AI Backend Running"
 
 # ==========================================
 # PREDICTION ROUTE
@@ -46,13 +50,13 @@ def predict():
     try:
 
         # ==================================
-        # GET JSON INPUT
+        # GET INPUT DATA
         # ==================================
 
         data = request.get_json()
 
         # ==================================
-        # GET LOCATION
+        # GPS LOCATION
         # ==================================
 
         lat = data.get("lat")
@@ -69,6 +73,25 @@ def predict():
             weather_data = get_weather(lat, lon)
 
         # ==================================
+        # WEATHER VALUES
+        # ==================================
+
+        temperature = 30
+        humidity = 60
+        rainfall = 0
+        wind_speed = 0
+
+        if weather_data:
+
+            temperature = weather_data["temperature"]
+
+            humidity = weather_data["humidity"]
+
+            rainfall = weather_data["rainfall"]
+
+            wind_speed = weather_data.get("wind_speed", 0)
+
+        # ==================================
         # ENCODE INPUTS
         # ==================================
 
@@ -77,12 +100,6 @@ def predict():
         season_encoded = le_season.transform([data['Season']])[0]
 
         state_encoded = le_state.transform([data['State']])[0]
-
-        # ==================================
-        # SAFE RAINFALL INPUT
-        # ==================================
-
-        annual_rainfall = float(data.get('Annual_Rainfall', 0))
 
         # ==================================
         # CREATE DATAFRAME
@@ -98,7 +115,7 @@ def predict():
 
             'Area': float(data['Area']),
 
-            'Annual_Rainfall': annual_rainfall,
+            'Annual_Rainfall': rainfall,
 
             'Fertilizer': float(data['Fertilizer']),
 
@@ -113,53 +130,102 @@ def predict():
         sample_scaled = scaler.transform(sample)
 
         # ==================================
-        # PREDICT YIELD RISK
+        # YIELD RISK PREDICTION
         # ==================================
 
         prediction = model.predict(sample_scaled)
 
         probabilities = model.predict_proba(sample_scaled)
 
-        # Decode prediction
-        risk = le_risk.inverse_transform(prediction)[0]
+        yield_risk = le_risk.inverse_transform(prediction)[0]
 
-        # Confidence %
         confidence = round(max(probabilities[0]) * 100, 2)
 
         # ==================================
-        # LIVE ENVIRONMENT DATA
+        # PEST RISK
         # ==================================
 
-        live_environment = None
+        pest_result = calculate_pest_risk(
 
-        if weather_data:
+            temperature,
+            humidity,
+            rainfall,
+            wind_speed
 
-            live_environment = {
+        )
 
-                "temperature": weather_data["temperature"],
-
-                "humidity": weather_data["humidity"],
-
-                "current_rainfall": weather_data["rainfall"]
-
-            }
+        pest_risk = pest_result["risk"]
 
         # ==================================
-        # AI RECOMMENDATION ENGINE
+        # DISEASE RISK
         # ==================================
 
-        recommendation = "Weather data unavailable."
+        disease_result = calculate_disease_risk(
 
-        if weather_data:
+            temperature,
+            humidity,
+            rainfall,
+            wind_speed
 
-            recommendation = generate_recommendation(
+        )
 
-                crop=data["Crop"],
+        disease_risk = disease_result["risk"]
 
-                risk=risk,
+        # ==================================
+        # LIVE ENVIRONMENT
+        # ==================================
 
-                weather_data=weather_data
-            )
+        live_environment = {
+
+            "temperature": temperature,
+
+            "humidity": humidity,
+
+            "current_rainfall": rainfall,
+
+            "wind_speed": wind_speed
+
+        }
+
+        # ==================================
+        # AI SUGGESTIONS
+        # ==================================
+
+        yield_suggestion = generate_recommendation(
+
+            crop=data["Crop"],
+
+            risk=yield_risk,
+
+            risk_type="Yield Risk",
+
+            weather_data=live_environment
+
+        )
+
+        pest_suggestion = generate_recommendation(
+
+            crop=data["Crop"],
+
+            risk=pest_risk,
+
+            risk_type="Pest Risk",
+
+            weather_data=live_environment
+
+        )
+
+        disease_suggestion = generate_recommendation(
+
+            crop=data["Crop"],
+
+            risk=disease_risk,
+
+            risk_type="Disease Risk",
+
+            weather_data=live_environment
+
+        )
 
         # ==================================
         # RETURN RESPONSE
@@ -167,7 +233,11 @@ def predict():
 
         return jsonify({
 
-            "predicted_risk": risk,
+            "yield_risk": yield_risk,
+
+            "pest_risk": pest_risk,
+
+            "disease_risk": disease_risk,
 
             "confidence_percent": confidence,
 
@@ -177,7 +247,15 @@ def predict():
 
             "live_environment": live_environment,
 
-            "recommendation": recommendation
+            "pest_details": pest_result,
+
+            "disease_details": disease_result,
+
+            "yield_suggestion": yield_suggestion,
+
+            "pest_suggestion": pest_suggestion,
+
+            "disease_suggestion": disease_suggestion
 
         })
 
