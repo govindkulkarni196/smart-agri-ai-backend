@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import pickle
 import pandas as pd
-
+from flask_cors import CORS
 # WEATHER SERVICE
 from weather_utils import get_weather
 
@@ -30,6 +30,7 @@ le_risk = pickle.load(open('risk_encoder.pkl', 'rb'))
 # ==========================================
 
 app = Flask(__name__)
+CORS(app)
 
 # ==========================================
 # HOME ROUTE
