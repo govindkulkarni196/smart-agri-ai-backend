@@ -1,7 +1,6 @@
 import requests
 
-url = "http://127.0.0.1:5000/predict"
-
+url = "https://web-production-16886.up.railway.app/predict"
 sample_data = {
 
     "Crop": "Rice",
